@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wabi-Sec | Advanced System Auditor</title>
+    <title>Wabi-Sec | Advanced Heuristic Auditor</title>
     <style>
         :root {
             --bg: #020617;
@@ -11,173 +11,287 @@
             --primary: #38bdf8;
             --danger: #ef4444;
             --success: #22c55e;
+            --warning: #f59e0b;
             --text: #f8fafc;
+            --terminal: #0f172a;
         }
 
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
             padding: 20px;
+            display: flex;
+            justify-content: center;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
+        .container { width: 100%; max-width: 1000px; }
 
         header {
-            border-bottom: 2px solid var(--primary);
-            padding-bottom: 10px;
-            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
         }
+
+        h1 { font-size: 24px; color: var(--primary); margin: 0; letter-spacing: 1px; }
+        .version { font-size: 12px; color: #64748b; font-family: monospace; }
 
         .dashboard {
             display: grid;
-            grid-template-columns: 1fr 2fr;
+            grid-template-columns: 300px 1fr;
             gap: 20px;
         }
 
         .panel {
             background: var(--card);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             border: 1px solid #334155;
         }
 
-        button {
+        .score-box { text-align: center; margin-bottom: 20px; }
+        .score-display { font-size: 64px; font-weight: bold; color: var(--primary); line-height: 1; }
+        .score-label { font-size: 12px; color: #94a3b8; text-transform: uppercase; margin-top: 5px; }
+
+        .btn {
             background: var(--primary);
             color: var(--bg);
             border: none;
-            padding: 12px 20px;
+            padding: 14px;
             font-weight: bold;
             cursor: pointer;
             width: 100%;
-            border-radius: 4px;
-            margin-bottom: 10px;
+            border-radius: 6px;
+            transition: 0.3s;
+            font-family: inherit;
         }
 
-        button:hover { filter: brightness(1.2); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4); }
+        .btn:disabled { background: #334155; cursor: not-allowed; transform: none; }
 
-        .log-window {
-            background: #000;
-            color: #0f0;
+        .terminal {
+            background: var(--terminal);
+            color: #10b981;
+            font-family: 'Courier New', Courier, monospace;
             padding: 15px;
-            height: 300px;
+            height: 200px;
             overflow-y: auto;
             font-size: 13px;
-            border-radius: 4px;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+            margin-bottom: 20px;
+        }
+
+        .finding-card {
+            background: #0f172a;
             border: 1px solid #334155;
-        }
-
-        .risk-card {
             border-left: 4px solid var(--danger);
-            background: #2d3748;
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            animation: slideIn 0.3s ease;
         }
 
-        .score-display {
-            font-size: 48px;
-            text-align: center;
+        @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+        .finding-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .finding-title { font-weight: bold; color: var(--text); font-size: 16px; }
+        .risk-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .risk-high { background: #7f1d1d; color: #fecaca; }
+        .risk-med { background: #78350f; color: #fef3c7; }
+
+        .finding-desc { font-size: 13px; color: #94a3b8; margin: 8px 0; }
+        
+        .fix-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 11px;
             font-weight: bold;
-            color: var(--primary);
+            border-radius: 4px;
+            cursor: pointer;
         }
 
-        .tag { font-size: 10px; color: var(--primary); font-weight: bold; }
+        .fix-btn:hover { filter: brightness(1.1); }
+
+        .empty-state { text-align: center; color: #64748b; padding: 40px 0; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>WABI-SEC AUDITOR <span style="font-size: 14px; color: var(--dim);">v2.1 [HEURISTIC ENGINE]</span></h1>
+        <h1>WABI-SEC <span style="font-weight: normal; color: #64748b;">| Auditor</span></h1>
+        <div class="version">HEURISTIC_ENGINE_V2.5</div>
     </header>
 
     <div class="dashboard">
         <div class="panel">
-            <div class="tag">SYSTEM STATUS</div>
-            <div id="healthScore" class="score-display">--</div>
-            <p id="statusText" style="text-align: center; font-size: 12px;">Waiting for scan...</p>
-            <hr style="border: 0; border-top: 1px solid #334155; margin: 20px 0;">
-            <button onclick="runAudit()">START SYSTEM AUDIT</button>
-            <p style="font-size: 11px; color: #94a3b8;">Note: This simulation implements RK4-inspired logic matching for security heuristics.</p>
+            <div class="score-box">
+                <div id="healthScore" class="score-display">--</div>
+                <div class="score-label">System Integrity Score</div>
+            </div>
+            
+            <button id="scanBtn" class="btn" onclick="startFullAudit()">RUN SECURITY SCAN</button>
+            
+            <div style="margin-top: 25px; font-size: 12px; color: #94a3b8;">
+                <p><strong>Scanner Active:</strong> Checks Ports, File Metadata (Amharic keywords), and Process Integrity.</p>
+                <p style="margin-top: 10px; color: var(--primary);">* Simulation based on Python logic developed for INSA application.</p>
+            </div>
         </div>
 
         <div class="panel">
-            <div class="tag">AUDIT LOG & FINDINGS</div>
-            <div id="log" class="log-window">
-                > System Ready...<br>
-                > Awaiting Command...
+            <div class="terminal" id="terminal">
+                > System kernel verified.<br>
+                > Awaiting operator input...
             </div>
-            <div id="results" style="margin-top: 20px;"></div>
+
+            <div id="findingsContainer">
+                <div class="empty-state">No active scan results. Click button to begin.</div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // 1. SMART MATCH DATABASE (In-file JSON)
-    const securityDB = [
-        { id: "R01", target: "Port 80", weight: 25, msg: "Insecure HTTP detected", fix: "Force Port 443 (HTTPS)" },
-        { id: "R02", target: "Unencrypted Ge'ez Keys", weight: 40, msg: "Sensitive Amharic text found on Desktop", fix: "Apply AES-256 encryption to local files" },
-        { id: "R03", target: "Unsigned Process", weight: 15, msg: "Process running from /Temp folder", fix: "Terminate PID and scan binary signature" },
-        { id: "R04", target: "Guest Account", weight: 20, msg: "Active Guest Profile", fix: "Disable guest access in System Policy" }
+    // THE KNOWLEDGE BASE (Smart Matcher Database)
+    const securityRules = [
+        { 
+            id: "R01", 
+            target: "port_80", 
+            title: "Insecure Port Active", 
+            desc: "Unencrypted HTTP traffic detected on Port 80. Risk of packet sniffing.", 
+            risk: "high", 
+            weight: 25,
+            remediation: "Force 443/HTTPS encryption." 
+        },
+        { 
+            id: "R02", 
+            target: "amharic_keys", 
+            title: "Localized Data Risk", 
+            desc: "Found 'ይለፍ' and 'ቁልፍ' keywords in unencrypted files on Desktop.", 
+            risk: "high", 
+            weight: 35,
+            remediation: "Encrypt file content using AES-256." 
+        },
+        { 
+            id: "R03", 
+            target: "temp_process", 
+            title: "Suspicious Process Location", 
+            desc: "Process running from /AppData/Temp. Common malware hiding spot.", 
+            risk: "med", 
+            weight: 15,
+            remediation: "Kill process PID and quarantine binary." 
+        }
     ];
 
-    async function runAudit() {
-        const log = document.getElementById('log');
-        const results = document.getElementById('results');
-        const scoreDiv = document.getElementById('healthScore');
-        const statusText = document.getElementById('statusText');
+    let currentScore = 100;
+    let foundRisks = [];
 
-        // Reset
-        log.innerHTML = "> Initializing Heuristic Engine...<br>";
-        results.innerHTML = "";
-        let healthScore = 100;
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const term = document.getElementById('terminal');
 
-        const sleep = m => new Promise(r => setTimeout(r, m));
+    function logToTerminal(msg, color = '#10b981') {
+        const line = document.createElement('div');
+        line.style.color = color;
+        line.innerHTML = `> ${msg}`;
+        term.appendChild(line);
+        term.scrollTop = term.scrollHeight;
+    }
 
-        // 2. SIMULATED SCANNING (Visualizing the Scanner.py logic)
-        log.innerHTML += "> Checking Network Ports...<br>";
+    async function startFullAudit() {
+        // Reset State
+        document.getElementById('scanBtn').disabled = true;
+        document.getElementById('findingsContainer').innerHTML = "";
+        currentScore = 100;
+        foundRisks = [];
+        updateScore();
+
+        logToTerminal("Initializing Scanner.py modules...", "#38bdf8");
         await sleep(800);
-        log.innerHTML += "> Analyzing Desktop Metadata (Amharic keywords: ይለፍ, ቁልፍ)...<br>";
+        
+        logToTerminal("Scanning Network sockets (Ports 21, 80, 4444)...");
         await sleep(1000);
-        log.innerHTML += "> Inspecting Active Process Signatures...<br>";
+        
+        logToTerminal("Parsing File System for localized metadata (Amharic UTF-8)...");
+        await sleep(1200);
+
+        logToTerminal("Matching findings against Heuristic Ruleset...");
         await sleep(600);
 
-        // 3. THE SMART MATCH LOGIC
-        // We simulate finding a few vulnerabilities
-        const simulatedFindings = ["Port 80", "Unencrypted Ge'ez Keys", "Unsigned Process"];
+        // Simulate matching logic
+        performSmartMatch(["port_80", "amharic_keys", "temp_process"]);
         
-        log.innerHTML += "> Matcher Engine found " + simulatedFindings.length + " conflicts.<br>";
+        document.getElementById('scanBtn').disabled = false;
+        logToTerminal("Audit Complete. " + foundRisks.length + " Criticalities identified.", "#f59e0b");
+    }
 
-        simulatedFindings.forEach(finding => {
-            const rule = securityDB.find(r => r.target === finding);
-            if (rule) {
-                healthScore -= rule.weight;
-                const div = document.createElement('div');
-                div.className = 'risk-card';
-                div.innerHTML = `
-                    <div class="tag" style="color:#ef4444">CRITICAL MATCH</div>
-                    <strong>${rule.msg}</strong><br>
-                    <small>Advice: ${rule.fix} (-${rule.weight}%)</small>
-                `;
-                results.appendChild(div);
+    function performSmartMatch(scanData) {
+        scanData.forEach(target => {
+            const match = securityRules.find(r => r.target === target);
+            if (match) {
+                foundRisks.push(match);
+                renderFinding(match);
+                currentScore -= match.weight;
             }
         });
+        updateScore();
+    }
 
-        // Update Score
-        scoreDiv.innerText = healthScore;
-        if (healthScore < 50) {
-            statusText.innerText = "CRITICAL RISK";
-            statusText.style.color = "var(--danger)";
-        } else {
-            statusText.innerText = "VULNERABLE";
-            statusText.style.color = "#fbbf24";
-        }
-        log.innerHTML += "> Audit Complete. Report Generated.<br>";
+    function renderFinding(rule) {
+        const container = document.getElementById('findingsContainer');
+        const card = document.createElement('div');
+        card.className = 'finding-card';
+        card.id = `card-${rule.id}`;
+        card.innerHTML = `
+            <div class="finding-header">
+                <div class="finding-title">${rule.title}</div>
+                <span class="risk-tag risk-${rule.risk}">${rule.risk}</span>
+            </div>
+            <div class="finding-desc">${rule.desc}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span style="font-size: 11px; color: #64748b;">Deduction: -${rule.weight}%</span>
+                <button class="fix-btn" onclick="remediate('${rule.id}')">APPLY REMEDIATION</button>
+            </div>
+        `;
+        container.appendChild(card);
+    }
+
+    async function remediate(id) {
+        const rule = securityRules.find(r => r.id === id);
+        logToTerminal(`Executing Remediation Loop for ${id}...`, "#f59e0b");
+        
+        await sleep(1500); // Simulate "fixing" time
+        
+        logToTerminal(`[FIXED] ${rule.remediation}`, "#22c55e");
+        
+        // Remove card and restore score
+        const card = document.getElementById(`card-${id}`);
+        card.style.opacity = '0.4';
+        card.style.pointerEvents = 'none';
+        card.querySelector('.fix-btn').innerText = "RESOLVED";
+        card.querySelector('.fix-btn').style.background = "#334155";
+        
+        currentScore += rule.weight;
+        updateScore();
+    }
+
+    function updateScore() {
+        const scoreEl = document.getElementById('healthScore');
+        scoreEl.innerText = Math.max(0, currentScore);
+        
+        if (currentScore >= 90) scoreEl.style.color = "var(--success)";
+        else if (currentScore >= 60) scoreEl.style.color = "var(--warning)";
+        else scoreEl.style.color = "var(--danger)";
     }
 </script>
 
