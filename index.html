@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wabi-Sec | Advanced System Auditor</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --card: #1e293b;
+            --primary: #38bdf8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        button {
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            padding: 12px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        button:hover { filter: brightness(1.2); }
+
+        .log-window {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 13px;
+            border-radius: 4px;
+            border: 1px solid #334155;
+        }
+
+        .risk-card {
+            border-left: 4px solid var(--danger);
+            background: #2d3748;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .score-display {
+            font-size: 48px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .tag { font-size: 10px; color: var(--primary); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>WABI-SEC AUDITOR <span style="font-size: 14px; color: var(--dim);">v2.1 [HEURISTIC ENGINE]</span></h1>
+    </header>
+
+    <div class="dashboard">
+        <div class="panel">
+            <div class="tag">SYSTEM STATUS</div>
+            <div id="healthScore" class="score-display">--</div>
+            <p id="statusText" style="text-align: center; font-size: 12px;">Waiting for scan...</p>
+            <hr style="border: 0; border-top: 1px solid #334155; margin: 20px 0;">
+            <button onclick="runAudit()">START SYSTEM AUDIT</button>
+            <p style="font-size: 11px; color: #94a3b8;">Note: This simulation implements RK4-inspired logic matching for security heuristics.</p>
+        </div>
+
+        <div class="panel">
+            <div class="tag">AUDIT LOG & FINDINGS</div>
+            <div id="log" class="log-window">
+                > System Ready...<br>
+                > Awaiting Command...
+            </div>
+            <div id="results" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. SMART MATCH DATABASE (In-file JSON)
+    const securityDB = [
+        { id: "R01", target: "Port 80", weight: 25, msg: "Insecure HTTP detected", fix: "Force Port 443 (HTTPS)" },
+        { id: "R02", target: "Unencrypted Ge'ez Keys", weight: 40, msg: "Sensitive Amharic text found on Desktop", fix: "Apply AES-256 encryption to local files" },
+        { id: "R03", target: "Unsigned Process", weight: 15, msg: "Process running from /Temp folder", fix: "Terminate PID and scan binary signature" },
+        { id: "R04", target: "Guest Account", weight: 20, msg: "Active Guest Profile", fix: "Disable guest access in System Policy" }
+    ];
+
+    async function runAudit() {
+        const log = document.getElementById('log');
+        const results = document.getElementById('results');
+        const scoreDiv = document.getElementById('healthScore');
+        const statusText = document.getElementById('statusText');
+
+        // Reset
+        log.innerHTML = "> Initializing Heuristic Engine...<br>";
+        results.innerHTML = "";
+        let healthScore = 100;
+
+        const sleep = m => new Promise(r => setTimeout(r, m));
+
+        // 2. SIMULATED SCANNING (Visualizing the Scanner.py logic)
+        log.innerHTML += "> Checking Network Ports...<br>";
+        await sleep(800);
+        log.innerHTML += "> Analyzing Desktop Metadata (Amharic keywords: ይለፍ, ቁልፍ)...<br>";
+        await sleep(1000);
+        log.innerHTML += "> Inspecting Active Process Signatures...<br>";
+        await sleep(600);
+
+        // 3. THE SMART MATCH LOGIC
+        // We simulate finding a few vulnerabilities
+        const simulatedFindings = ["Port 80", "Unencrypted Ge'ez Keys", "Unsigned Process"];
+        
+        log.innerHTML += "> Matcher Engine found " + simulatedFindings.length + " conflicts.<br>";
+
+        simulatedFindings.forEach(finding => {
+            const rule = securityDB.find(r => r.target === finding);
+            if (rule) {
+                healthScore -= rule.weight;
+                const div = document.createElement('div');
+                div.className = 'risk-card';
+                div.innerHTML = `
+                    <div class="tag" style="color:#ef4444">CRITICAL MATCH</div>
+                    <strong>${rule.msg}</strong><br>
+                    <small>Advice: ${rule.fix} (-${rule.weight}%)</small>
+                `;
+                results.appendChild(div);
+            }
+        });
+
+        // Update Score
+        scoreDiv.innerText = healthScore;
+        if (healthScore < 50) {
+            statusText.innerText = "CRITICAL RISK";
+            statusText.style.color = "var(--danger)";
+        } else {
+            statusText.innerText = "VULNERABLE";
+            statusText.style.color = "#fbbf24";
+        }
+        log.innerHTML += "> Audit Complete. Report Generated.<br>";
+    }
+</script>
+
+</body>
+</html>
