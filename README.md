@@ -9,7 +9,7 @@ This project also carries over the "Smart Match" logic I used in my previous pro
 How it works (The Logic)
 Wabi-Sec doesn't just guess if a system is safe. It follows a three-part process I designed:
 
-The Scanner: It probes the local environment. It checks if risky ports like Port 80 are open and scans for processes running from temporary folders—a common trick used by malware.
+The Scanner: It probes the local environment. It checks if risky ports like Port 80 are open and scans for processes running from temporary folders a common trick used by malware.
 
 The Rule Database: I created a database.json file that acts as the "brain." It stores different security risks and assigns them a "weight" based on how dangerous they are.
 
